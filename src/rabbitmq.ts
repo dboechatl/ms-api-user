@@ -5,15 +5,24 @@ export class RabbitMQ {
     private channel: Channel | null = null;
 
     async connect(url: string): Promise<void> {
-        this.connection = await amqplib.connect(url);
-        this.channel = await this.connection.createChannel();
+        try {
+            this.connection = await amqplib.connect(url);
+            this.channel = await this.connection.createChannel();
+            console.log("Connected to RabbitMQ");
+        } catch (error) {
+            console.error("Failed to connect to RabbitMQ:", error);
+            throw error;
+        }
     }
 
     async consume(queue: string, callback: (message: string) => void): Promise<void> {
         if (!this.channel) throw new Error("RabbitMQ channel is not initialized");
+
         await this.channel.assertQueue(queue, { durable: true });
+
         this.channel.consume(queue, (msg: ConsumeMessage | null) => {
             if (msg) {
+                console.log("Consuming message:", msg.content.toString());
                 callback(msg.content.toString());
                 this.channel?.ack(msg);
             }
