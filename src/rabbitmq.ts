@@ -28,4 +28,12 @@ export class RabbitMQ {
             }
         });
     }
+
+    async publish(queue: string, message: string): Promise<void> {
+        if (!this.channel) throw new Error("RabbitMQ channel is not initialized");
+
+        await this.channel.assertQueue(queue, { durable: true });
+        this.channel.sendToQueue(queue, Buffer.from(message));
+        console.log(`Message published to queue ${queue}: ${message}`);
+    }
 }

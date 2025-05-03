@@ -13,9 +13,14 @@ const rabbitMQ = new RabbitMQ();
                 const parsedMessage = JSON.parse(message);
 
                 // Validate the message payload
-                const { name, email } = parsedMessage;
-                if (!name || !email) {
+                if (parsedMessage.action !== "USER_CREATED" || !parsedMessage.data) {
                     console.error("Invalid message payload:", parsedMessage);
+                    return;
+                }
+
+                const { name, email } = parsedMessage.data;
+                if (!name || !email) {
+                    console.error("Invalid user data:", parsedMessage.data);
                     return;
                 }
 
@@ -23,6 +28,10 @@ const rabbitMQ = new RabbitMQ();
                 const query = "INSERT INTO users (name, email) VALUES (?, ?)";
                 await db.query(query, [name, email]);
                 console.log(`User ${name} saved to database`);
+
+                // Publish a message to RabbitMQ for the email microservice
+                const emailMessage = JSON.stringify({ name, email });
+                await rabbitMQ.publish("email-queue", emailMessage);
             } catch (error) {
                 console.error("Error processing message:", error);
             }
