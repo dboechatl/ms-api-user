@@ -9,10 +9,10 @@ export class UserController {
             throw new Error("Invalid user data");
         }
 
-        // Save user to the database
+        // Salva o usuário no banco de dados
         await UserModel.createUser(name, email);
 
-        // Publish message to RabbitMQ
+        // Publica uma mensagem no RabbitMQ para notificar outros microsserviços
         const message = JSON.stringify({ name, email });
         await RabbitMQService.publish("email-queue", message);
 

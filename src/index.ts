@@ -7,19 +7,17 @@ import { UserController } from "./controllers/user.controller";
 const app = express();
 app.use(express.json());
 
-// Connect to services
 (async () => {
     try {
         await DatabaseService.connect();
         await RabbitMQService.connect("amqp://localhost");
         console.log("Services connected successfully");
 
-        // Consume messages from RabbitMQ
+        // Consome mensagens da fila "user-queue"
         RabbitMQService.consume("user-queue", async (message) => {
             try {
                 const parsedMessage = JSON.parse(message);
 
-                // Validate and process the message
                 if (parsedMessage.action === "USER_CREATED" && parsedMessage.data) {
                     await UserController.createUser(parsedMessage.data);
                 } else {
@@ -35,10 +33,8 @@ app.use(express.json());
     }
 })();
 
-// Register routes
 app.use("/api", userRoutes);
 
-// Start server
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
